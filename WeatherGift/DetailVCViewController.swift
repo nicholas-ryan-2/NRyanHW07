@@ -27,10 +27,12 @@ class DetailVCViewController: UIViewController {
         if currentPage == 0 {
             getLocation()
         }
+        updateUserInterface()
+    }
+    func updateUserInterface() {
         locationLabel.text = locationsArray[currentPage].name
         dateLabel.text = locationsArray[currentPage].coordinates
     }
-
     
 }
 
@@ -58,13 +60,30 @@ extension DetailVCViewController: CLLocationManagerDelegate {
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        let geoCoder = CLGeocoder
-        var currentLocation = locations.last
-        let currentLat = "\(currentLocation!.coordinate.latitude)"
-        let currentLong = "\(currentLocation!.coordinate.longitude)"
-        print("Your coordinates are: " + currentLat + currentLong)
+        if currentPage == 0 {
+            let geoCoder = CLGeocoder()
+            var place = ""
+            var currentLocation = locations.last
+            let currentLat = "\(currentLocation!.coordinate.latitude)"
+            let currentLong = "\(currentLocation!.coordinate.longitude)"
+            print("Your coordinates are: " + currentLat + ", " + currentLong)
+            geoCoder.reverseGeocodeLocation(currentLocation!, completionHandler: {placemarks,
+                error in
+                if placemarks != nil {
+                    var placemark = placemarks!.last
+                    place = (placemark?.name)!
+                    self.locationsArray[0].name = place
+                    self.locationsArray[0].coordinates = currentLat + ", " + currentLong
+                    
+                } else {
+                    print("Error receiving current location")
+                    place = "Parts Unknown"
+                }
+                print(place)
+                self.locationsArray[0].getWeather()
+                self.updateUserInterface()
+            })}
         locationManager.stopUpdatingLocation()
-        geoCoder.reverseGeocodeLocation(currentLocation)
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
