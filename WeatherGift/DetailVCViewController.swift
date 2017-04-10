@@ -20,18 +20,31 @@ class DetailVCViewController: UIViewController {
     var currentPage = 0
     var locationsArray = [WeatherLocation]()
     let locationManager = CLLocationManager()
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         locationManager.delegate = self
         if currentPage == 0 {
             getLocation()
         }
-        updateUserInterface()
+        locationsArray[currentPage].getWeather {
+            self.updateUserInterface()
+        }
     }
     func updateUserInterface() {
+        let isHidden = (locationsArray[currentPage].currentTemp == -999.9)
+        
+        temperatureLabel.isHidden = isHidden
+        locationLabel.isHidden = isHidden
+        
+        
         locationLabel.text = locationsArray[currentPage].name
         dateLabel.text = locationsArray[currentPage].coordinates
+        var curTemperature = String(format: "%3.f", locationsArray[currentPage].currentTemp) + "°"
+        temperatureLabel.text = curTemperature
+        print("%%% curTemperature inside updateUserInterface = \(curTemperature)")
+        summaryLabel.text = locationsArray[currentPage].weatherSummary
+        currentImage.image = UIImage(named: locationsArray[currentPage].currentIcon)
     }
     
 }
@@ -66,22 +79,23 @@ extension DetailVCViewController: CLLocationManagerDelegate {
             var currentLocation = locations.last
             let currentLat = "\(currentLocation!.coordinate.latitude)"
             let currentLong = "\(currentLocation!.coordinate.longitude)"
-            print("Your coordinates are: " + currentLat + ", " + currentLong)
+            print("Your coordinates are: " + currentLat + "," + currentLong)
             geoCoder.reverseGeocodeLocation(currentLocation!, completionHandler: {placemarks,
                 error in
                 if placemarks != nil {
                     var placemark = placemarks!.last
                     place = (placemark?.name)!
                     self.locationsArray[0].name = place
-                    self.locationsArray[0].coordinates = currentLat + ", " + currentLong
+                    self.locationsArray[0].coordinates = currentLat + "," + currentLong
                     
                 } else {
                     print("Error receiving current location")
                     place = "Parts Unknown"
                 }
                 print(place)
-                self.locationsArray[0].getWeather()
-                self.updateUserInterface()
+                self.locationsArray[0].getWeather {
+                    self.updateUserInterface()
+                }
             })}
         locationManager.stopUpdatingLocation()
     }
